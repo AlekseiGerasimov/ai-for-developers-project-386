@@ -1,0 +1,51 @@
+min_version = "2026.11.4"
+
+[settings]
+experimental = true
+
+[tools]
+java = "temurin-25.0.5+8.0.LTS"
+node = "24.19.0"
+hk = "2.11.1"
+pitchfork = "2.33.1"
+actionlint = "1.7.12"
+
+[tasks.install]
+run = "npm ci"
+
+[tasks.setup]
+depends = ["install"]
+run = ["node scripts/tasks.mjs lint", "hk install"]
+
+[tasks.generate]
+run = "node scripts/tasks.mjs generate"
+
+[tasks.build]
+run = "node scripts/tasks.mjs build"
+
+[tasks.lint]
+run = "node scripts/tasks.mjs lint"
+
+[tasks."lint:commit"]
+run = "node scripts/tasks.mjs lint:commit"
+
+[tasks.audit]
+run = "npm audit --audit-level=high"
+
+[tasks.test]
+run = "node scripts/tasks.mjs test"
+
+[tasks.check]
+run = "node scripts/tasks.mjs check"
+
+[tasks.dev]
+daemons = ["backend", "frontend"]
+run = "mise daemons status"
+
+[daemons.backend]
+run = "node scripts/tasks.mjs backend"
+ready_port = 8080
+
+[daemons.frontend]
+run = "node scripts/tasks.mjs frontend"
+ready_port = 5173
