@@ -15,7 +15,7 @@ run = "npm ci"
 
 [tasks.setup]
 depends = ["install"]
-run = ["node scripts/tasks.mjs lint", "hk install"]
+run = ["node scripts/tasks.mjs lint", "hk install --mise"]
 
 [tasks.generate]
 run = "node scripts/tasks.mjs generate"

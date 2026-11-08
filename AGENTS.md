@@ -11,3 +11,25 @@
 - В коммит включайте `contracts/openapi.yaml` и `frontend/src/api/`; `backend/target/` не коммитится.
 - Коммиты — Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:` и другие стандартные типы.
 - Не изменяйте `.github/workflows/hexlet-check.yml`: это проверка Хекслета.
+
+## Agent skills
+
+Скиллы Matt Pocock установлены для Codex в `.agents/skills/`.
+Вызывайте скилл по имени или ссылкой на `.agents/skills/<name>/SKILL.md`.
+Основной цикл: `wayfinder` → `to-spec` → `to-tickets` → `implement-spec`.
+Перед работой читайте этот файл, спецификацию, связанные тикеты и их зависимости.
+
+### Issue tracker
+
+GitHub Issues: https://github.com/AlekseiGerasimov/ai-for-developers-project-386/issues.
+Настройки и команды: `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Стандартные метки: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`.
+Назначение меток: `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: словарь `GLOSSARY.md` в корне, решения в `docs/adr/`.
+Правила чтения и обновления: `docs/agents/domain.md`.

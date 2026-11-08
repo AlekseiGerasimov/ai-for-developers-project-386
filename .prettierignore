@@ -9,3 +9,4 @@ contracts/openapi.yaml
 .github/workflows/hexlet-check.yml
 .github/workflows/README.md
 .idea
+.agents/skills

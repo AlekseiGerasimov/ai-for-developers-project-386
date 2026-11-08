@@ -57,6 +57,11 @@ Maven Wrapper и `package-lock.json`.
 После установки добавьте каталог с `mise.exe` в PATH и перезапустите терминал.
 Проверка: `mise --version`.
 
+Git-хуки запускают проверки через `mise exec`, чтобы использовать версии
+инструментов из `mise.toml`. Сам `mise` должен быть установлен в постоянный
+каталог и доступен в PATH процесса Git. После изменения PATH перезапустите IDE.
+Для переустановки хуков выполните `mise exec -- hk install --mise`.
+
 ```bash
 git clone https://github.com/AlekseiGerasimov/ai-for-developers-project-386.git
 cd ai-for-developers-project-386
