@@ -1,0 +1,12 @@
+node_modules
+backend
+frontend/src/api
+frontend/dist
+.generated
+.cache
+package-lock.json
+contracts/openapi.yaml
+.github/workflows/hexlet-check.yml
+.github/workflows/README.md
+.idea
+.agents/skills

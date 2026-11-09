@@ -1,0 +1,42 @@
+name: Application checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v3
+        with:
+          version: 2026.11.4
+      - name: Cache npm downloads
+        uses: actions/cache@v5
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: ${{ runner.os }}-npm-
+      - name: Cache Maven dependencies and wrapper
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: ${{ runner.os }}-maven-${{ hashFiles('backend/pom.xml', 'backend/.mvn/wrapper/maven-wrapper.properties', 'mise.toml') }}
+      - name: Cache OpenAPI Generator
+        uses: actions/cache@v5
+        with:
+          path: .cache/openapi-generator
+          key: ${{ runner.os }}-openapi-${{ hashFiles('openapitools.json') }}
+      - run: mise run install
+      - run: mise run check
