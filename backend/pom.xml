@@ -39,6 +39,16 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>${project.basedir}/../frontend/dist</directory>
+                <targetPath>static</targetPath>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.openapitools</groupId>
@@ -97,4 +107,12 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>checks</id>
+            <build>
+                <directory>${project.basedir}/target/check</directory>
+            </build>
+        </profile>
+    </profiles>
 </project>

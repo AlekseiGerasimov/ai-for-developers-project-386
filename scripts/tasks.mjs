@@ -33,7 +33,7 @@ function bin(name, args) {
 
 function maven(...args) {
   run(
-    win ? 'mvnw.cmd' : 'sh',
+    win ? '.\\mvnw.cmd' : 'sh',
     [
       ...(win ? [] : ['./mvnw']),
       '--batch-mode',
@@ -142,17 +142,28 @@ switch (task) {
     maven('--offline', 'checkstyle:check')
     break
   case 'test':
+    run(win ? 'npm.cmd' : 'npm', ['run', 'test', '--workspace', 'frontend'])
+    run(win ? 'npm.cmd' : 'npm', ['run', 'build', '--workspace', 'frontend'])
+    rmSync(path.join(root, 'backend/target/classes/static'), {
+      recursive: true,
+      force: true,
+    })
     maven('test')
     break
   case 'build':
     run(win ? 'npm.cmd' : 'npm', ['run', 'build', '--workspace', 'frontend'])
-    maven('package', '-DskipTests')
+    maven('clean', 'package', '-DskipTests')
     break
   case 'check':
     generate(true)
     lintSources()
+    run(win ? 'npm.cmd' : 'npm', ['run', 'test', '--workspace', 'frontend'])
     run(win ? 'npm.cmd' : 'npm', ['run', 'build', '--workspace', 'frontend'])
-    maven('verify')
+    rmSync(path.join(root, 'backend/target/check/classes/static'), {
+      recursive: true,
+      force: true,
+    })
+    maven('-Pchecks', 'verify')
     break
   case 'backend':
     maven('spring-boot:run')

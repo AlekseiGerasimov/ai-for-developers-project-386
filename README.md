@@ -76,10 +76,17 @@ mise run setup
 mise run dev
 ```
 
-Откройте http://localhost:5173: страница проверяет соединение с бекендом
-через сгенерированный SDK. Бекенд отвечает на http://localhost:8080/api/health.
-Vite проксирует `/api` на бекенд. Сейчас реализован только каркас,
-без бронирования и базы данных.
+Откройте http://localhost:5173: главная страница «Запись на звонок» объясняет
+сценарий записи без регистрации. Ссылка «Выбрать встречу» ведёт на `/meetings` —
+заглушку каталога типов встреч со ссылкой на главную. Бронирование пока недоступно.
+Главная и каталог открываются без обращения к API.
+
+Бекенд отвечает на http://localhost:8080/api/health. Vite проксирует `/api`
+на бекенд. Бронирование и база данных пока не реализованы.
+
+Термины проекта записаны в [GLOSSARY.md](GLOSSARY.md), принятые решения —
+в [docs/adr/](docs/adr/). Рабочие часы, часовой пояс, шаг слотов, начало окна
+записи и состав формы остаются вопросами следующего этапа.
 
 Серверы работают в фоне под управлением mise/pitchfork:
 
@@ -89,16 +96,40 @@ mise daemons logs backend
 mise daemons stop backend frontend
 ```
 
+### Запуск собранного приложения
+
+```bash
+mise run build
+java -jar backend/target/calendar-0.1.0.jar
+```
+
+Откройте http://localhost:8080/. Один Spring Boot сервер отдаёт главную,
+каталог на `/meetings` и API на `/api/health`. Прямое открытие и обновление
+`/meetings` поддерживаются. Vite и Node.js для запуска готового JAR не нужны;
+для команды `java` используйте Java из окружения mise (`mise exec -- java ...`),
+если она не доступна напрямую в PATH.
+
+Задачи `build`, `test` и `check` сначала собирают фронтенд. Maven включает
+`frontend/dist` в JAR. `test` и `check` очищают только скопированные статические
+ресурсы, исключая устаревшие JS/CSS, и работают при запущенном JAR.
+`check` выполняет Maven `verify` с профилем `checks` в отдельном каталоге
+`backend/target/check`, не перезаписывая запущенный `backend/target/calendar-0.1.0.jar`.
+Для прямого запуска Maven-тестов предварительно выполните
+`mise exec -- npm run build --workspace frontend`.
+
+`build` сохраняет Maven `clean`: перед сборкой остановите запущенный JAR,
+так как на Windows работающий процесс блокирует его удаление.
+
 Команды из корня репозитория (Windows и Linux):
 
 | Команда                       | Назначение                                                    |
 | ----------------------------- | ------------------------------------------------------------- |
 | `mise run install`            | Установка npm-зависимостей из lockfile без Git-хуков (для CI) |
-| `mise run check`              | Генерация, линтеры, типы, сборка и smoke-тест                 |
+| `mise run check`              | Генерация, линтеры, типы, сборка, frontend-тесты и JUnit      |
 | `mise run lint`               | Checkstyle, ESLint, Prettier и actionlint                     |
 | `mise run lint:commit`        | Те же линтеры с Maven offline после начальной установки       |
 | `mise run audit`              | Сетевой аудит npm, ошибка при high/critical                   |
-| `mise run test`               | JUnit: запуск сервера и HTTP-запрос к `/api/health`           |
+| `mise run test`               | Vitest: страницы и ссылки; JUnit: сервер и `/api/health`      |
 | `mise run build`              | Сборка фронтенда и исполняемого JAR                           |
 | `mise run generate`           | Обновление OpenAPI и клиентского SDK из TypeSpec              |
 | `mise exec -- npm run format` | Форматирование исходников и конфигураций                      |

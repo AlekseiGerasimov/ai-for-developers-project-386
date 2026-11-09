@@ -1,52 +1,49 @@
-import { useEffect, useState } from 'react'
 import {
-  Alert,
+  Anchor,
+  Button,
   Container,
-  Loader,
+  List,
   Paper,
   Stack,
   Text,
   Title,
 } from '@mantine/core'
-import { Configuration, HealthApi } from './api'
-
-const api = new HealthApi(new Configuration({ basePath: '' }))
 
 export default function App() {
-  const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading')
-
-  useEffect(() => {
-    const controller = new AbortController()
-    api.getHealth({ signal: controller.signal }).then(
-      (health) => setState(health.status === 'ok' ? 'ok' : 'error'),
-      () => {
-        if (!controller.signal.aborted) setState('error')
-      },
-    )
-    return () => controller.abort()
-  }, [])
+  const isCatalog = window.location.pathname === '/meetings'
 
   return (
-    <Container size="sm" py="xl">
-      <Paper withBorder radius="lg" p="xl">
-        <Stack>
-          <Title order={1}>Календарь звонков</Title>
-          <Text c="dimmed">Основа сервиса записи на встречи.</Text>
-          <div role="status" aria-live="polite">
-            {state === 'loading' && (
-              <Loader aria-label="Проверяем соединение" />
-            )}
-            {state === 'ok' && (
-              <Alert color="teal" title="Сервер доступен">
-                Соединение установлено.
-              </Alert>
-            )}
-            {state === 'error' && (
-              <Alert color="red" title="Нет соединения">
-                Не удалось связаться с сервером. Попробуйте обновить страницу.
-              </Alert>
-            )}
-          </div>
+    <Container component="main" size="sm" py={{ base: 'xl', sm: 80 }}>
+      <Paper withBorder radius="lg" p={{ base: 'lg', sm: 'xl' }}>
+        <Stack gap="xl">
+          {isCatalog ? (
+            <>
+              <Title order={1}>Каталог типов встреч</Title>
+              <Text c="dimmed">Запись пока недоступна.</Text>
+              <Anchor href="/">На главную</Anchor>
+            </>
+          ) : (
+            <>
+              <Title order={1}>Запись на звонок</Title>
+              <Text size="lg" c="dimmed">
+                Выберите тип встречи и удобное время для звонка. Запись без
+                регистрации.
+              </Text>
+              <Stack component="section" aria-labelledby="booking-steps-title">
+                <Title order={2} size="h3" id="booking-steps-title">
+                  Как записаться
+                </Title>
+                <List type="ordered" spacing="md">
+                  <List.Item>Выберите встречу</List.Item>
+                  <List.Item>Выберите время</List.Item>
+                  <List.Item>Подтвердите запись</List.Item>
+                </List>
+              </Stack>
+              <Button component="a" href="/meetings" size="lg" radius="md">
+                Выбрать встречу
+              </Button>
+            </>
+          )}
         </Stack>
       </Paper>
     </Container>
