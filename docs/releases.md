@@ -6,6 +6,8 @@ Frontend и backend выпускаются вместе из `main`. Единс�
 Release-please обновляет `package.json`, `frontend/package.json`, три записи
 версии приложения в `package-lock.json`, `backend/pom.xml`, манифест и
 `CHANGELOG.md` в одном PR. Имя собранного JAR всегда `calendar.jar`.
+`CHANGELOG.md` генерирует release-please; файл исключён из Prettier, чтобы
+формат Markdown генератора не блокировал проверки релизного PR.
 
 Workflow `Release` запускается при push в `main` или вручную на `main`.
 Conventional Commits определяют следующую версию: `fix:` — patch, `feat:` —
