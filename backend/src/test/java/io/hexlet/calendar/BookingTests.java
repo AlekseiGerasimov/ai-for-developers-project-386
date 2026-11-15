@@ -204,6 +204,39 @@ class BookingTests {
         assertEquals("[]", get().body());
     }
 
+    @Test
+    void trimmedMaximumGuestFieldsAndRepeatedEmailAreAllowed() throws Exception {
+        var name = "Я".repeat(100);
+        var email = "A".repeat(64) + "@" + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(57) + ".com";
+        assertEquals(254, email.length());
+        for (var start : java.util.List.of("2026-11-16T07:00:00Z", "2026-11-16T08:00:00Z")) {
+            var response = postJson(mapper.writeValueAsString(java.util.Map.of(
+                    "meetingTypeId", "00000000-0000-0000-0000-000000000001", "startsAt", start,
+                    "guestName", " " + name + " ", "guestEmail", " " + email + " ")));
+            assertEquals(201, response.statusCode());
+            assertEquals(name, mapper.readTree(response.body()).get("guestName").asString());
+            assertEquals(email, mapper.readTree(response.body()).get("guestEmail").asString());
+        }
+        assertEquals(2, mapper.readTree(get().body()).size());
+    }
+
+    @Test
+    void failedInsertRollsBackAndReleasesCalendarLock() throws Exception {
+        try (var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
+            statement.execute("ALTER TABLE meetings ADD CONSTRAINT simulated_failure CHECK (guest_name <> 'Guest')");
+            try {
+                var response = post("00000000-0000-0000-0000-000000000001", "2026-11-16T07:00:00Z");
+                assertEquals(503, response.statusCode());
+                assertEquals("SERVICE_UNAVAILABLE", mapper.readTree(response.body()).get("code").asString());
+                assertEquals("[]", get().body());
+            } finally {
+                statement.execute("ALTER TABLE meetings DROP CONSTRAINT simulated_failure");
+            }
+        }
+        assertEquals(201, post("00000000-0000-0000-0000-000000000001", "2026-11-16T07:00:00Z").statusCode());
+        assertEquals(1, mapper.readTree(get().body()).size());
+    }
+
     @ParameterizedTest
     @CsvSource({
         "2026-11-16T06:00:00Z, SLOT_EXPIRED",

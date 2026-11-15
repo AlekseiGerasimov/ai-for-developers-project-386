@@ -1,4 +1,12 @@
-import { Anchor, Button, Group, Stack, Text, Title } from '@mantine/core'
+import {
+  Anchor,
+  Button,
+  Group,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core'
 import { useEffect, useState } from 'react'
 import {
   CalendarApi,
@@ -8,6 +16,7 @@ import {
   type MeetingType,
   type Slot,
 } from './api'
+import { useBooking } from './useBooking'
 
 const api = new CalendarApi(new Configuration({ basePath: '' }))
 const zone = 'Europe/Moscow'
@@ -39,6 +48,12 @@ export default function MeetingCalendar({ id }: { id: string }) {
   const [attempt, setAttempt] = useState(0)
   const [day, setDay] = useState('')
   const [selected, setSelected] = useState<Slot>()
+  const booking = useBooking(id, () => {
+    setSelected(undefined)
+    setLoading(true)
+    setError(false)
+    setAttempt((value) => value + 1)
+  })
 
   useEffect(() => {
     let active = true
@@ -72,6 +87,36 @@ export default function MeetingCalendar({ id }: { id: string }) {
       active = false
     }
   }, [id, attempt])
+
+  if (booking.state === 'success' && booking.meeting) {
+    const meeting = booking.meeting
+    return (
+      <Stack>
+        <Title order={1}>Встреча подтверждена</Title>
+        <Text>
+          {meeting.meetingType.title}, {meeting.meetingType.durationMinutes} мин
+        </Text>
+        <Text>
+          {dayLabel(new Date(`${dayKey(meeting.startsAt)}T12:00:00Z`))},{' '}
+          {interval(meeting)}, {zone}
+        </Text>
+        <Text>{meeting.guestName}</Text>
+        <Text>{meeting.guestEmail}</Text>
+        <Button onClick={booking.restart}>Записаться ещё</Button>
+        <Anchor href="/meetings">В каталог</Anchor>
+      </Stack>
+    )
+  }
+  if (booking.state === 'uncertain' && !booking.pending)
+    return (
+      <Stack>
+        <Text role="alert">
+          Не удалось подтвердить результат записи. Встреча могла сохраниться.
+          Повторная отправка выбранного времени заблокирована.
+        </Text>
+        <Button onClick={booking.restart}>Вернуться к календарю</Button>
+      </Stack>
+    )
 
   if (missing)
     return (
@@ -115,6 +160,7 @@ export default function MeetingCalendar({ id }: { id: string }) {
       </Text>
       <Text>{data.type.durationMinutes} мин</Text>
       <Text>Часовой пояс владельца: {data.availability.timeZone}</Text>
+      {booking.message && <Text role="alert">{booking.message}</Text>}
       {!data.availability.slots.length && (
         <Text>В ближайшие 14 дней свободного времени нет</Text>
       )}
@@ -127,6 +173,7 @@ export default function MeetingCalendar({ id }: { id: string }) {
               variant={key === day ? 'filled' : 'light'}
               aria-pressed={key === day}
               disabled={
+                booking.pending ||
                 !data.availability.slots.some(
                   (slot) => dayKey(slot.startsAt) === key,
                 )
@@ -147,6 +194,7 @@ export default function MeetingCalendar({ id }: { id: string }) {
             key={slot.startsAt.toISOString()}
             variant="outline"
             aria-pressed={slot === selected}
+            disabled={booking.pending}
             onClick={() => setSelected(slot)}
           >
             {interval(slot)}
@@ -154,11 +202,43 @@ export default function MeetingCalendar({ id }: { id: string }) {
         ))}
       </Group>
       {selected && (
-        <Text role="status">
-          Выбрано: {data.type.title}, {data.type.durationMinutes} мин,{' '}
-          {dayLabel(new Date(`${day}T12:00:00Z`))}, {interval(selected)},{' '}
-          {data.availability.timeZone}
-        </Text>
+        <Stack>
+          <Text role="status">
+            Выбрано: {data.type.title}, {data.type.durationMinutes} мин,{' '}
+            {dayLabel(new Date(`${day}T12:00:00Z`))}, {interval(selected)},{' '}
+            {data.availability.timeZone}
+          </Text>
+          <form
+            noValidate
+            onSubmit={(event) => {
+              event.preventDefault()
+              void booking.submit(selected)
+            }}
+          >
+            <Stack>
+              <TextInput
+                label="Имя"
+                value={booking.name}
+                onChange={(event) => booking.setName(event.currentTarget.value)}
+                error={booking.errors.guestName}
+                disabled={booking.pending}
+              />
+              <TextInput
+                label="Email"
+                type="email"
+                value={booking.email}
+                onChange={(event) =>
+                  booking.setEmail(event.currentTarget.value)
+                }
+                error={booking.errors.guestEmail}
+                disabled={booking.pending}
+              />
+              <Button type="submit" disabled={booking.pending}>
+                {booking.pending ? 'Запись…' : 'Подтвердить запись'}
+              </Button>
+            </Stack>
+          </form>
+        </Stack>
       )}
       <Anchor href="/meetings">В каталог</Anchor>
     </Stack>
