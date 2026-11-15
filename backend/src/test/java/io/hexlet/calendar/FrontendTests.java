@@ -22,7 +22,7 @@ class FrontendTests {
     @Test
     void servesApplicationAndItsAssetsAtPublicPageUrls() throws Exception {
         try (var client = HttpClient.newHttpClient()) {
-            for (var page : new String[] {"/", "/meetings", "/owner/meeting-types"}) {
+            for (var page : new String[] {"/", "/meetings", "/owner/meeting-types", "/owner/meetings"}) {
                 var response = get(client, page);
                 assertEquals(200, response.statusCode(), page);
                 assertTrue(contentType(response).startsWith("text/html"), page);
