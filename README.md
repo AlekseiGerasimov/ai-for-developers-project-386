@@ -104,7 +104,7 @@ mise daemons stop backend frontend
 
 ```bash
 mise run build
-java -jar backend/target/calendar-0.1.0.jar
+java -jar backend/target/calendar.jar
 ```
 
 Откройте http://localhost:8080/. Один Spring Boot сервер отдаёт главную,
@@ -117,7 +117,7 @@ java -jar backend/target/calendar-0.1.0.jar
 `frontend/dist` в JAR. `test` и `check` очищают только скопированные статические
 ресурсы, исключая устаревшие JS/CSS, и работают при запущенном JAR.
 `check` выполняет Maven `verify` с профилем `checks` в отдельном каталоге
-`backend/target/check`, не перезаписывая запущенный `backend/target/calendar-0.1.0.jar`.
+`backend/target/check`, не перезаписывая запущенный `backend/target/calendar.jar`.
 Для прямого запуска Maven-тестов предварительно выполните
 `mise exec -- npm run build --workspace frontend`.
 
@@ -152,7 +152,7 @@ mise run test:e2e
 ```
 
 В Linux CI используется `playwright install --with-deps chromium`.
-Браузерный прогон собирает собственный `backend/target/e2e/calendar-0.1.0.jar`,
+Браузерный прогон собирает собственный `backend/target/e2e/calendar.jar`,
 создаёт временную файловую H2 с тестовым каталогом и запускает Java на свободном
 порту (`server.port=0`). После успеха или ошибки созданный процесс останавливается,
 БД удаляется. Пользовательский сервер и его JAR/БД не затрагиваются.

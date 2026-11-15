@@ -4,10 +4,12 @@
 - Окружение: mise в PATH; требуемая версия задана в `mise.toml`. Установка: `mise trust`, `mise install`, `mise run setup`.
 - Запуск: `mise run dev`; остановка: `mise daemons stop backend frontend`.
 - Все проверки: `mise run check`; тесты: `mise run test`; линтеры: `mise run lint`.
+- Браузерные тесты: `mise run test:e2e`.
 - Pre-commit: `mise run lint:commit` (Maven offline после setup); аудит зависимостей: `mise run audit`.
 - После очистки `~/.m2` или обновления Maven-плагинов выполните `mise run lint` с доступом к сети, затем `mise run lint:commit`.
 - Сборка: `mise run build`; генерация контракта и SDK: `mise run generate`.
 - Не редактируйте генерируемые OpenAPI, SDK и Java-интерфейсы вручную; меняйте TypeSpec и запускайте генерацию.
+- Генерируемые Java-файлы: `backend/target/generated-sources/openapi`; профили `checks` и `e2e` используют `backend/target/check/generated-sources/openapi` и `backend/target/e2e/generated-sources/openapi`.
 - В коммит включайте `contracts/openapi.yaml` и `frontend/src/api/`; `backend/target/` не коммитится.
 - Коммиты — Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:` и другие стандартные типы.
 - Коммит реализации ссылается на тикет, который он закрывает: например, `feat: запись на свободный слот (#12)`.
