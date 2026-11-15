@@ -5,6 +5,7 @@ import {
   render,
   screen,
   within,
+  waitFor,
 } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 import App from './App'
@@ -13,6 +14,51 @@ afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
   window.history.replaceState(null, '', '/')
+})
+
+test('владелец создаёт тип через сеть и получает публичную ссылку', async () => {
+  const created = {
+    id: 'd29fe6b4-a141-4ba0-9d98-b738cfe0ec7c',
+    title: 'Разбор',
+    description: 'Задача',
+    durationMinutes: 20,
+  }
+  const network = vi
+    .fn()
+    .mockResolvedValueOnce(Response.json([]))
+    .mockResolvedValueOnce(Response.json(created, { status: 201 }))
+    .mockResolvedValueOnce(Response.json([created]))
+  vi.stubGlobal('fetch', network)
+  window.history.replaceState(null, '', '/owner/meeting-types')
+  render(
+    <MantineProvider>
+      <App />
+    </MantineProvider>,
+  )
+  expect(await screen.findByText('Пока нет типов встреч')).toBeVisible()
+  fireEvent.change(screen.getByLabelText('Название'), {
+    target: { value: 'Разбор' },
+  })
+  fireEvent.change(screen.getByLabelText('Описание'), {
+    target: { value: 'Задача' },
+  })
+  fireEvent.change(screen.getByLabelText('Длительность, минут'), {
+    target: { value: '20' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Создать тип встречи' }))
+  expect(await screen.findByText('Тип встречи создан')).toBeVisible()
+  expect(await screen.findByRole('heading', { name: 'Разбор' })).toBeVisible()
+  expect(
+    screen.getByRole('link', { name: 'Публичная ссылка' }),
+  ).toHaveAttribute('href', `/meetings/${created.id}`)
+  expect(screen.getByLabelText('Название')).toHaveValue('')
+  expect(network.mock.calls[1][1].body).toBe(
+    JSON.stringify({
+      title: 'Разбор',
+      description: 'Задача',
+      durationMinutes: 20,
+    }),
+  )
 })
 
 test('каталог показывает загрузку и пустое состояние', async () => {
@@ -33,6 +79,83 @@ test('каталог показывает загрузку и пустое со�
     'href',
     '/',
   )
+})
+
+test('владелец сохраняет поля при ошибке, блокирует повтор и явно обновляет список после потери ответа', async () => {
+  let rejectPost: (error: Error) => void = () => {}
+  const network = vi
+    .fn()
+    .mockResolvedValueOnce(Response.json([]))
+    .mockImplementationOnce(
+      () =>
+        new Promise<Response>((_resolve, reject) => {
+          rejectPost = reject
+        }),
+    )
+    .mockResolvedValueOnce(Response.json([]))
+  vi.stubGlobal('fetch', network)
+  window.history.replaceState(null, '', '/owner/meeting-types')
+  render(
+    <MantineProvider>
+      <App />
+    </MantineProvider>,
+  )
+  await screen.findByText('Пока нет типов встреч')
+  fireEvent.change(screen.getByLabelText('Название'), {
+    target: { value: 'Разбор' },
+  })
+  fireEvent.change(screen.getByLabelText('Описание'), {
+    target: { value: 'Вопрос' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Создать тип встречи' }))
+  expect(screen.getByRole('button', { name: 'Создание…' })).toBeDisabled()
+  fireEvent.click(screen.getByRole('button', { name: 'Создание…' }))
+  await waitFor(() => expect(network).toHaveBeenCalledTimes(2))
+  rejectPost(new Error('response lost'))
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Тип встречи мог сохраниться',
+  )
+  expect(screen.queryByText('Тип встречи создан')).not.toBeInTheDocument()
+  expect(screen.getByLabelText('Название')).toHaveValue('Разбор')
+  expect(network).toHaveBeenCalledTimes(2)
+  fireEvent.click(screen.getByRole('button', { name: 'Обновить список' }))
+  await screen.findByText('Пока нет типов встреч')
+  expect(network).toHaveBeenCalledTimes(3)
+})
+
+test('серверные ошибки выводятся у полей и не очищают форму', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValueOnce(Response.json([]))
+      .mockResolvedValueOnce(
+        Response.json(
+          {
+            code: 'VALIDATION_ERROR',
+            message: 'Ошибка',
+            fieldErrors: [{ field: 'title', message: 'Исправьте название' }],
+          },
+          { status: 400 },
+        ),
+      ),
+  )
+  window.history.replaceState(null, '', '/owner/meeting-types')
+  render(
+    <MantineProvider>
+      <App />
+    </MantineProvider>,
+  )
+  await screen.findByText('Пока нет типов встреч')
+  fireEvent.change(screen.getByLabelText('Название'), {
+    target: { value: 'Разбор' },
+  })
+  fireEvent.change(screen.getByLabelText('Описание'), {
+    target: { value: 'Вопрос' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Создать тип встречи' }))
+  expect(await screen.findByText('Исправьте название')).toBeVisible()
+  expect(screen.getByLabelText('Название')).toHaveValue('Разбор')
 })
 
 test('каталог показывает полные данные типов из сети', async () => {
