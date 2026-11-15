@@ -1,4 +1,4 @@
-import { Button, Paper, Stack, Text, Title } from '@mantine/core'
+import { Anchor, Button, Paper, Stack, Text, Title } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import { Configuration, MeetingTypesApi, type MeetingType } from './api'
 
@@ -60,7 +60,9 @@ export default function MeetingCatalog() {
           style={{ overflowWrap: 'anywhere' }}
         >
           <Title order={2} size="h3">
-            {type.title}
+            <Anchor href={`/meetings/${type.id}`} inherit>
+              {type.title}
+            </Anchor>
           </Title>
           <Text style={{ whiteSpace: 'pre-wrap' }}>{type.description}</Text>
           <Text c="dimmed">{type.durationMinutes} мин</Text>

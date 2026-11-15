@@ -16,6 +16,7 @@ const server = spawn(
     '-jar',
     path.join(root, 'backend/target/e2e/calendar.jar'),
     '--server.port=0',
+    '--spring.profiles.active=e2e',
     `--spring.datasource.url=jdbc:h2:file:${database};LOCK_TIMEOUT=5000`,
     '--spring.sql.init.mode=always',
     `--spring.sql.init.data-locations=file:${fixture}`,

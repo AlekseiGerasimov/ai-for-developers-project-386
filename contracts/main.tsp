@@ -27,6 +27,7 @@ model MeetingType {
 @route("/api/meeting-types")
 @tag("MeetingTypes")
 @get
+
 op listMeetingTypes(): MeetingType[] | ServiceUnavailable | InternalError;
 
 model CreateMeetingType {
@@ -68,3 +69,30 @@ op createMeetingType(@body input: CreateMeetingType): {
   @statusCode statusCode: 201;
   @body body: MeetingType;
 } | ValidationError | ServiceUnavailable | InternalError;
+model Slot {
+  startsAt: utcDateTime;
+  endsAt: utcDateTime;
+}
+
+model Availability {
+  timeZone: string;
+  serverTime: utcDateTime;
+  windowStartDate: plainDate;
+  windowEndDate: plainDate;
+  slots: Slot[];
+}
+
+@route("/api/meeting-types/{id}")
+@tag("Calendar")
+@get
+op getMeetingType(@path @format("uuid") id: string): MeetingType | MeetingTypeNotFound | ValidationError | ServiceUnavailable | InternalError;
+
+@route("/api/meeting-types/{id}/slots")
+@tag("Calendar")
+@get
+op getSlots(@path @format("uuid") id: string): Availability | MeetingTypeNotFound | ValidationError | ServiceUnavailable | InternalError;
+
+@error model MeetingTypeNotFound {
+  @statusCode statusCode: 404;
+  @body body: ApiError;
+}

@@ -9,10 +9,12 @@ import {
   Title,
 } from '@mantine/core'
 import MeetingCatalog from './MeetingCatalog'
+import MeetingCalendar from './MeetingCalendar'
 import OwnerMeetingTypes from './OwnerMeetingTypes'
 
 export default function App() {
   const isCatalog = window.location.pathname === '/meetings'
+  const calendar = window.location.pathname.match(/^\/meetings\/([^/]+)$/)
   const isOwner = window.location.pathname === '/owner/meeting-types'
 
   return (
@@ -25,6 +27,8 @@ export default function App() {
               <OwnerMeetingTypes />
               <Anchor href="/meetings">Каталог типов встреч</Anchor>
             </>
+          ) : calendar ? (
+            <MeetingCalendar id={calendar[1]} />
           ) : isCatalog ? (
             <>
               <Title order={1}>Каталог типов встреч</Title>
