@@ -13,6 +13,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,11 +29,15 @@ public class CalendarController implements CalendarApi {
 
     @Override
     public ResponseEntity<MeetingType> getMeetingType(UUID id) {
-        return ResponseEntity.ok(jdbc.queryForObject(
+        try {
+            return ResponseEntity.ok(jdbc.queryForObject(
                 "SELECT * FROM meeting_types WHERE id = ?",
                 (row, index) -> new MeetingType().id(id).title(row.getString("title"))
                         .description(row.getString("description"))
                         .durationMinutes(row.getInt("duration_minutes")), id));
+        } catch (EmptyResultDataAccessException error) {
+            throw new MeetingTypeNotFoundException();
+        }
     }
 
     @Override

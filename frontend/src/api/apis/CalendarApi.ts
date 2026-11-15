@@ -14,6 +14,11 @@
 
 import * as runtime from '../runtime';
 import {
+    type ApiError,
+    ApiErrorFromJSON,
+    ApiErrorToJSON,
+} from '../models/ApiError';
+import {
     type Availability,
     AvailabilityFromJSON,
     AvailabilityToJSON,

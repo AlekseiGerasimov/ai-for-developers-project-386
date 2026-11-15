@@ -85,9 +85,14 @@ model Availability {
 @route("/api/meeting-types/{id}")
 @tag("Calendar")
 @get
-op getMeetingType(@path @format("uuid") id: string): MeetingType;
+op getMeetingType(@path @format("uuid") id: string): MeetingType | MeetingTypeNotFound | ValidationError | ServiceUnavailable | InternalError;
 
 @route("/api/meeting-types/{id}/slots")
 @tag("Calendar")
 @get
-op getSlots(@path @format("uuid") id: string): Availability;
+op getSlots(@path @format("uuid") id: string): Availability | MeetingTypeNotFound | ValidationError | ServiceUnavailable | InternalError;
+
+@error model MeetingTypeNotFound {
+  @statusCode statusCode: 404;
+  @body body: ApiError;
+}

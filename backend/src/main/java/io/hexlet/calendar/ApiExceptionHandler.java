@@ -15,6 +15,12 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice(annotations = RestController.class)
 public class ApiExceptionHandler {
+    @ExceptionHandler(MeetingTypeNotFoundException.class)
+    public ResponseEntity<ApiError> missing(MeetingTypeNotFoundException error) {
+        return ResponseEntity.status(404).body(new ApiError().code("MEETING_TYPE_NOT_FOUND")
+                .message("Тип встречи не найден"));
+    }
+
     @ExceptionHandler(ApiValidationException.class)
     public ResponseEntity<ApiError> validation(ApiValidationException error) {
         return invalid(error.getFields());
