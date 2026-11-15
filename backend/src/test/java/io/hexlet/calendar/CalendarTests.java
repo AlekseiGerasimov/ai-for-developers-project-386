@@ -53,7 +53,7 @@ class CalendarTests {
     }
 
     static class ControlledClock extends Clock {
-        private final AtomicReference<Instant> now = new AtomicReference<>();
+        final AtomicReference<Instant> now = new AtomicReference<>();
 
         @Override
         public ZoneId getZone() { return ZoneOffset.UTC; }

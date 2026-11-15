@@ -5,6 +5,7 @@ import io.hexlet.calendar.model.FieldError;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
 import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.TransactionException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -15,6 +16,11 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice(annotations = RestController.class)
 public class ApiExceptionHandler {
+    @ExceptionHandler(SlotException.class)
+    public ResponseEntity<ApiError> slot(SlotException error) {
+        return ResponseEntity.status(error.getCode().equals("SLOT_TAKEN") ? 409 : 400)
+                .body(new ApiError().code(error.getCode()).message("Выберите другое время"));
+    }
     @ExceptionHandler(MeetingTypeNotFoundException.class)
     public ResponseEntity<ApiError> missing(MeetingTypeNotFoundException error) {
         return ResponseEntity.status(404).body(new ApiError().code("MEETING_TYPE_NOT_FOUND")
@@ -52,8 +58,8 @@ public class ApiExceptionHandler {
         return invalid(List.of(new FieldError().field(error.getName()).message("Некорректное значение")));
     }
 
-    @ExceptionHandler(DataAccessException.class)
-    public ResponseEntity<ApiError> unavailable(DataAccessException error) {
+    @ExceptionHandler({DataAccessException.class, TransactionException.class})
+    public ResponseEntity<ApiError> unavailable(RuntimeException error) {
         return ResponseEntity.status(503).body(new ApiError().code("SERVICE_UNAVAILABLE")
                 .message("Сервис временно недоступен"));
     }
