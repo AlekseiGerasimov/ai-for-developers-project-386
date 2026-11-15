@@ -1,0 +1,6 @@
+# Copy to .codex/config.toml in a trusted project, then run: codex mcp login render
+[mcp_servers.render]
+url = "https://mcp.render.com/mcp"
+
+[mcp_servers.render.oauth]
+client_id = "codex"

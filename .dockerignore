@@ -1,0 +1,17 @@
+**
+!package.json
+!package-lock.json
+!frontend/
+!frontend/**
+!backend/
+!backend/**
+!contracts/
+!contracts/openapi.yaml
+**/node_modules
+**/dist
+**/target
+**/data
+**/*.log
+**/.env*
+**/*.pem
+**/*.key

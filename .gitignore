@@ -9,3 +9,8 @@ dist/
 data/
 test-results/
 playwright-report/
+.env
+.env.*
+!.env.example
+.codex/config.toml
+.codex/auth.json
