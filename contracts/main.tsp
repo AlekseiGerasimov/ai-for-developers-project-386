@@ -28,3 +28,26 @@ model MeetingType {
 @tag("MeetingTypes")
 @get
 op listMeetingTypes(): MeetingType[];
+
+model Slot {
+  startsAt: utcDateTime;
+  endsAt: utcDateTime;
+}
+
+model Availability {
+  timeZone: string;
+  serverTime: utcDateTime;
+  windowStartDate: plainDate;
+  windowEndDate: plainDate;
+  slots: Slot[];
+}
+
+@route("/api/meeting-types/{id}")
+@tag("Calendar")
+@get
+op getMeetingType(@path @format("uuid") id: string): MeetingType;
+
+@route("/api/meeting-types/{id}/slots")
+@tag("Calendar")
+@get
+op getSlots(@path @format("uuid") id: string): Availability;

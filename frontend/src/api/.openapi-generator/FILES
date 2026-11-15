@@ -1,8 +1,11 @@
+apis/CalendarApi.ts
 apis/HealthApi.ts
 apis/MeetingTypesApi.ts
 apis/index.ts
 index.ts
+models/Availability.ts
 models/Health.ts
 models/MeetingType.ts
+models/Slot.ts
 models/index.ts
 runtime.ts
