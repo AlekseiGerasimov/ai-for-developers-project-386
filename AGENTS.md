@@ -10,6 +10,7 @@
 - Не редактируйте генерируемые OpenAPI, SDK и Java-интерфейсы вручную; меняйте TypeSpec и запускайте генерацию.
 - В коммит включайте `contracts/openapi.yaml` и `frontend/src/api/`; `backend/target/` не коммитится.
 - Коммиты — Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:` и другие стандартные типы.
+- Коммит реализации ссылается на тикет, который он закрывает: например, `feat: запись на свободный слот (#12)`.
 - Не изменяйте `.github/workflows/hexlet-check.yml`: это проверка Хекслета.
 
 ## Agent skills
