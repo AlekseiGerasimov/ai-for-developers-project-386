@@ -6,6 +6,7 @@ tags:
   - name: Health
   - name: MeetingTypes
   - name: Calendar
+  - name: Meetings
 paths:
   /api/health:
     get:
@@ -169,6 +170,81 @@ paths:
                 $ref: '#/components/schemas/ApiError'
       tags:
         - Calendar
+  /api/meetings:
+    post:
+      operationId: createMeeting
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meeting'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Meetings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMeeting'
+    get:
+      operationId: listMeetings
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Meeting'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Meetings
 components:
   schemas:
     ApiError:
@@ -209,6 +285,24 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Slot'
+    CreateMeeting:
+      type: object
+      required:
+        - meetingTypeId
+        - startsAt
+        - guestName
+        - guestEmail
+      properties:
+        meetingTypeId:
+          type: string
+          format: uuid
+        startsAt:
+          type: string
+          format: date-time
+        guestName:
+          type: string
+        guestEmail:
+          type: string
     CreateMeetingType:
       type: object
       required:
@@ -246,6 +340,34 @@ components:
           type: string
           enum:
             - ok
+    Meeting:
+      type: object
+      required:
+        - id
+        - meetingType
+        - startsAt
+        - endsAt
+        - guestName
+        - guestEmail
+      properties:
+        id:
+          type: string
+          format: uuid
+        meetingType:
+          $ref: '#/components/schemas/MeetingType'
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        guestName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        guestEmail:
+          type: string
+          maxLength: 254
     MeetingType:
       type: object
       required:

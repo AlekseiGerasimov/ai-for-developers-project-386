@@ -8,7 +8,6 @@ import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.UUID;
@@ -44,7 +43,7 @@ public class CalendarController implements CalendarApi {
     public ResponseEntity<Availability> getSlots(UUID id) {
         var type = getMeetingType(id).getBody();
         var now = clock.instant();
-        var zone = ZoneId.of("Europe/Moscow");
+        var zone = BookingPolicy.ZONE;
         var today = LocalDate.ofInstant(now, zone);
         var slots = new ArrayList<Slot>();
         var occupied = jdbc.query("SELECT starts_at, ends_at FROM meetings WHERE starts_at < ? AND ends_at > ?",
@@ -64,7 +63,7 @@ public class CalendarController implements CalendarApi {
                 var overlaps = occupied.stream().anyMatch(meeting ->
                         meeting.getStartsAt().toInstant().isBefore(end)
                                 && meeting.getEndsAt().toInstant().isAfter(candidate));
-                if (start.isAfter(now) && !end.isAfter(closing) && !overlaps) {
+                if (BookingPolicy.valid(start, end, now) && !overlaps) {
                     slots.add(new Slot().startsAt(start.atOffset(ZoneOffset.UTC))
                             .endsAt(end.atOffset(ZoneOffset.UTC)));
                 }

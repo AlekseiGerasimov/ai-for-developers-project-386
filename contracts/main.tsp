@@ -96,3 +96,37 @@ op getSlots(@path @format("uuid") id: string): Availability | MeetingTypeNotFoun
   @statusCode statusCode: 404;
   @body body: ApiError;
 }
+
+model CreateMeeting {
+  @format("uuid") meetingTypeId: string;
+  startsAt: utcDateTime;
+  guestName: string;
+  guestEmail: string;
+}
+
+model Meeting {
+  @format("uuid") id: string;
+  meetingType: MeetingType;
+  startsAt: utcDateTime;
+  endsAt: utcDateTime;
+  @minLength(1) @maxLength(100) guestName: string;
+  @maxLength(254) guestEmail: string;
+}
+
+@error model SlotTaken {
+  @statusCode statusCode: 409;
+  @body body: ApiError;
+}
+
+@route("/api/meetings")
+@tag("Meetings")
+@post
+op createMeeting(@body input: CreateMeeting): {
+  @statusCode statusCode: 201;
+  @body body: Meeting;
+} | ValidationError | MeetingTypeNotFound | SlotTaken | ServiceUnavailable | InternalError;
+
+@route("/api/meetings")
+@tag("Meetings")
+@get
+op listMeetings(): Meeting[] | ServiceUnavailable | InternalError;

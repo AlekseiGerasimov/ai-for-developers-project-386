@@ -3,3 +3,4 @@
 export * from './CalendarApi';
 export * from './HealthApi';
 export * from './MeetingTypesApi';
+export * from './MeetingsApi';
