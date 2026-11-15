@@ -83,7 +83,7 @@ export function useBooking(id: string, refresh: () => void) {
     // A refresh during the request must restore an unresolved result.
     save({ ...session, state: 'uncertain' })
     try {
-      const meeting = await api.createMeeting({
+      const response = await api.createMeetingRaw({
         createMeeting: {
           meetingTypeId: id,
           startsAt: slot.startsAt,
@@ -91,6 +91,9 @@ export function useBooking(id: string, refresh: () => void) {
           guestEmail: session.email,
         },
       })
+      if (response.raw.status !== 201)
+        throw new Error('Unexpected booking status')
+      const meeting = await response.value()
       save({ ...session, state: 'success', meeting })
     } catch (error) {
       let body: ApiError | undefined

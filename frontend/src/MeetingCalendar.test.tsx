@@ -285,3 +285,26 @@ test('field errors stay near inputs and draft reload preserves fields without se
   fireEvent.click(screen.getByRole('button', { name: '09:00–09:20' }))
   expect(screen.getByLabelText('Email')).toHaveValue('Guest@example.com')
 })
+
+test('unexpected successful HTTP status does not claim confirmation', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: RequestInit) => {
+      if (init?.method === 'POST')
+        return Response.json({
+          id: 'saved',
+          meetingType: type,
+          ...availability.slots[0],
+          guestName: 'Гость',
+          guestEmail: 'Guest@example.com',
+        })
+      return Response.json(url.endsWith('/slots') ? availability : type)
+    }),
+  )
+  openCalendar()
+  await fillBooking()
+  fireEvent.click(screen.getByRole('button', { name: 'Подтвердить запись' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Не удалось подтвердить результат записи',
+  )
+})
