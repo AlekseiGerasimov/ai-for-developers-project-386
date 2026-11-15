@@ -5,6 +5,7 @@ import {
   render,
   screen,
   within,
+  waitFor,
 } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 import App from './App'
@@ -28,8 +29,53 @@ const availability = {
 
 afterEach(() => {
   cleanup()
+  sessionStorage.clear()
   vi.unstubAllGlobals()
   window.history.replaceState(null, '', '/')
+})
+
+test('booking uses selected slot and restores confirmation after reload without POST', async () => {
+  const fetch = vi.fn(async (url: string, init?: RequestInit) => {
+    if (init?.method === 'POST') {
+      expect(JSON.parse(String(init.body))).toEqual({
+        meetingTypeId: type.id,
+        startsAt: '2026-11-17T06:00:00.000Z',
+        guestName: 'Гость',
+        guestEmail: 'Guest@example.com',
+      })
+      return Response.json(
+        {
+          id: 'saved',
+          meetingType: type,
+          ...availability.slots[0],
+          guestName: 'Гость',
+          guestEmail: 'Guest@example.com',
+        },
+        { status: 201 },
+      )
+    }
+    return Response.json(url.endsWith('/slots') ? availability : type)
+  })
+  vi.stubGlobal('fetch', fetch)
+  openCalendar()
+  fireEvent.click(await screen.findByRole('button', { name: '09:00–09:20' }))
+  fireEvent.change(screen.getByLabelText('Имя'), { target: { value: 'Гость' } })
+  fireEvent.change(screen.getByLabelText('Email'), {
+    target: { value: 'Guest@example.com' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Подтвердить запись' }))
+  expect(await screen.findByText('Встреча подтверждена')).toBeVisible()
+  cleanup()
+  openCalendar()
+  expect(await screen.findByText('Встреча подтверждена')).toBeVisible()
+  expect(screen.getByText('Guest@example.com')).toBeVisible()
+  expect(
+    fetch.mock.calls.filter(([, init]) => init?.method === 'POST'),
+  ).toHaveLength(1)
+  fireEvent.click(screen.getByRole('button', { name: 'Записаться ещё' }))
+  expect(
+    await screen.findByRole('button', { name: '09:00–09:20' }),
+  ).toBeVisible()
 })
 
 function openCalendar() {
@@ -117,4 +163,148 @@ test('missing meeting type shows a catalog link instead of empty availability', 
   expect(
     screen.queryByRole('button', { name: 'Повторить' }),
   ).not.toBeInTheDocument()
+})
+
+async function fillBooking() {
+  fireEvent.click(await screen.findByRole('button', { name: '09:00–09:20' }))
+  fireEvent.change(screen.getByLabelText('Имя'), { target: { value: 'Гость' } })
+  fireEvent.change(screen.getByLabelText('Email'), {
+    target: { value: 'Guest@example.com' },
+  })
+}
+
+test.each(['SLOT_TAKEN', 'SLOT_EXPIRED', 'INVALID_SLOT'])(
+  'slot error %s reloads availability and retains guest fields',
+  async (code) => {
+    const fetch = vi.fn(async (url: string, init?: RequestInit) => {
+      if (init?.method === 'POST')
+        return Response.json(
+          { code },
+          { status: code === 'SLOT_TAKEN' ? 409 : 400 },
+        )
+      return Response.json(url.endsWith('/slots') ? availability : type)
+    })
+    vi.stubGlobal('fetch', fetch)
+    openCalendar()
+    await fillBooking()
+    fireEvent.click(screen.getByRole('button', { name: 'Подтвердить запись' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Выберите другое',
+    )
+    expect(screen.queryByLabelText('Имя')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '09:00–09:20' }))
+    expect(screen.getByLabelText('Имя')).toHaveValue('Гость')
+    expect(screen.getByLabelText('Email')).toHaveValue('Guest@example.com')
+    expect(
+      fetch.mock.calls.filter(([url]) => url.endsWith('/slots')),
+    ).toHaveLength(2)
+  },
+)
+
+test('lost response remains uncertain across reload and needs explicit calendar return', async () => {
+  const fetch = vi.fn(async (url: string, init?: RequestInit) => {
+    if (init?.method === 'POST') throw new TypeError('Connection lost')
+    return Response.json(url.endsWith('/slots') ? availability : type)
+  })
+  vi.stubGlobal('fetch', fetch)
+  openCalendar()
+  await fillBooking()
+  fireEvent.click(screen.getByRole('button', { name: 'Подтвердить запись' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Не удалось подтвердить результат записи',
+  )
+  cleanup()
+  openCalendar()
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'Встреча могла сохраниться',
+  )
+  expect(
+    screen.queryByRole('button', { name: 'Подтвердить запись' }),
+  ).not.toBeInTheDocument()
+  expect(
+    fetch.mock.calls.filter(([, init]) => init?.method === 'POST'),
+  ).toHaveLength(1)
+  fireEvent.click(screen.getByRole('button', { name: 'Вернуться к календарю' }))
+  fireEvent.click(await screen.findByRole('button', { name: '09:00–09:20' }))
+  expect(screen.getByLabelText('Имя')).toHaveValue('Гость')
+})
+
+test('pending booking blocks double submit and a refresh restores uncertainty without POST', async () => {
+  const fetch = vi.fn(async (url: string, init?: RequestInit) => {
+    if (init?.method === 'POST') return new Promise<Response>(() => {})
+    return Response.json(url.endsWith('/slots') ? availability : type)
+  })
+  vi.stubGlobal('fetch', fetch)
+  openCalendar()
+  await fillBooking()
+  const submit = screen.getByRole('button', { name: 'Подтвердить запись' })
+  fireEvent.click(submit)
+  fireEvent.click(submit)
+  expect(screen.getByRole('button', { name: 'Запись…' })).toBeDisabled()
+  await waitFor(() =>
+    expect(
+      fetch.mock.calls.filter(([, init]) => init?.method === 'POST'),
+    ).toHaveLength(1),
+  )
+  cleanup()
+  openCalendar()
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'Не удалось подтвердить результат записи',
+  )
+  expect(
+    fetch.mock.calls.filter(([, init]) => init?.method === 'POST'),
+  ).toHaveLength(1)
+})
+
+test('field errors stay near inputs and draft reload preserves fields without selected time', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: RequestInit) => {
+      if (init?.method === 'POST')
+        return Response.json(
+          {
+            code: 'VALIDATION_ERROR',
+            fieldErrors: [{ field: 'guestEmail', message: 'Проверьте адрес' }],
+          },
+          { status: 400 },
+        )
+      return Response.json(url.endsWith('/slots') ? availability : type)
+    }),
+  )
+  openCalendar()
+  await fillBooking()
+  fireEvent.click(screen.getByRole('button', { name: 'Подтвердить запись' }))
+  expect(await screen.findByText('Проверьте адрес')).toBeVisible()
+  expect(screen.getByLabelText('Email')).toHaveValue('Guest@example.com')
+  cleanup()
+  openCalendar()
+  expect(
+    await screen.findByRole('button', { name: '09:00–09:20' }),
+  ).toHaveAttribute('aria-pressed', 'false')
+  expect(screen.queryByLabelText('Email')).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: '09:00–09:20' }))
+  expect(screen.getByLabelText('Email')).toHaveValue('Guest@example.com')
+})
+
+test('unexpected successful HTTP status does not claim confirmation', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: RequestInit) => {
+      if (init?.method === 'POST')
+        return Response.json({
+          id: 'saved',
+          meetingType: type,
+          ...availability.slots[0],
+          guestName: 'Гость',
+          guestEmail: 'Guest@example.com',
+        })
+      return Response.json(url.endsWith('/slots') ? availability : type)
+    }),
+  )
+  openCalendar()
+  await fillBooking()
+  fireEvent.click(screen.getByRole('button', { name: 'Подтвердить запись' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Не удалось подтвердить результат записи',
+  )
 })
