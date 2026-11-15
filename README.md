@@ -1,5 +1,7 @@
 # Календарь звонков
 
+Процесс общего выпуска frontend и backend: [релизы](docs/releases.md).
+
 [![hexlet-check](https://github.com/AlekseiGerasimov/ai-for-developers-project-386/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/AlekseiGerasimov/ai-for-developers-project-386/actions)
 
 Разработайте совместно с ИИ сервис для бронирования календаря

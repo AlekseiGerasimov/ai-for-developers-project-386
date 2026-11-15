@@ -3,7 +3,7 @@
 Frontend и backend выпускаются вместе из `main`. Единственная запись `.` в
 `.release-please-manifest.json` хранит текущую версию приложения (начальная —
 `0.1.0`; это исходная версия, а не заявление о опубликованном GitHub Release).
-Release-please обновляет `package.json`, `frontend/package.json`, обе записи
+Release-please обновляет `package.json`, `frontend/package.json`, три записи
 версии приложения в `package-lock.json`, `backend/pom.xml`, манифест и
 `CHANGELOG.md` в одном PR. Имя собранного JAR всегда `calendar.jar`.
 
@@ -38,9 +38,9 @@ GitHub App вместо обхода защиты.
 на уже опубликованной ветке используйте release-please CLI:
 
 ```powershell
-$env:GITHUB_TOKEN = gh auth token
-mise exec -- npx --yes release-please@17.11.2 release-pr --repo-url AlekseiGerasimov/ai-for-developers-project-386 --target-branch main --dry-run
-Remove-Item Env:GITHUB_TOKEN
+$releaseToken = gh auth token
+mise exec -- npx --yes release-please@17.11.2 release-pr --token $releaseToken --repo-url AlekseiGerasimov/ai-for-developers-project-386 --target-branch main --dry-run
+$releaseToken = $null
 ```
 
 Dry-run показывает будущий PR, версию и обновления файлов, но не создаёт PR,
