@@ -14,15 +14,77 @@
 
 import * as runtime from '../runtime';
 import {
+    type ApiError,
+    ApiErrorFromJSON,
+    ApiErrorToJSON,
+} from '../models/ApiError';
+import {
+    type CreateMeetingType,
+    CreateMeetingTypeFromJSON,
+    CreateMeetingTypeToJSON,
+} from '../models/CreateMeetingType';
+import {
     type MeetingType,
     MeetingTypeFromJSON,
     MeetingTypeToJSON,
 } from '../models/MeetingType';
 
+export interface CreateMeetingTypeRequest {
+    /**
+     *
+     */
+    createMeetingType: CreateMeetingType;
+}
+
 /**
  *
  */
 export class MeetingTypesApi extends runtime.BaseAPI {
+
+    /**
+     * Creates request options for createMeetingType without sending the request
+     */
+    async createMeetingTypeRequestOpts(requestParameters: CreateMeetingTypeRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['createMeetingType'] == null) {
+            throw new runtime.RequiredError(
+                'createMeetingType',
+                'Required parameter "createMeetingType" was null or undefined when calling createMeetingType().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+
+        let urlPath = `/api/meeting-types`;
+
+        return {
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: CreateMeetingTypeToJSON(requestParameters['createMeetingType']),
+        };
+    }
+
+    /**
+     */
+    async createMeetingTypeRaw(requestParameters: CreateMeetingTypeRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<MeetingType>> {
+        const requestOptions = await this.createMeetingTypeRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => MeetingTypeFromJSON(jsonValue));
+    }
+
+    /**
+     */
+    async createMeetingType(requestParameters: CreateMeetingTypeRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<MeetingType> {
+        const response = await this.createMeetingTypeRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Creates request options for listMeetingTypes without sending the request

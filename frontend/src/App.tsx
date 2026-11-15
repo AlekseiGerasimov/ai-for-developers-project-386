@@ -9,15 +9,23 @@ import {
   Title,
 } from '@mantine/core'
 import MeetingCatalog from './MeetingCatalog'
+import OwnerMeetingTypes from './OwnerMeetingTypes'
 
 export default function App() {
   const isCatalog = window.location.pathname === '/meetings'
+  const isOwner = window.location.pathname === '/owner/meeting-types'
 
   return (
     <Container component="main" size="sm" py={{ base: 'xl', sm: 80 }}>
       <Paper withBorder radius="lg" p={{ base: 'lg', sm: 'xl' }}>
         <Stack gap="xl">
-          {isCatalog ? (
+          {isOwner ? (
+            <>
+              <Title order={1}>Типы встреч владельца</Title>
+              <OwnerMeetingTypes />
+              <Anchor href="/meetings">Каталог типов встреч</Anchor>
+            </>
+          ) : isCatalog ? (
             <>
               <Title order={1}>Каталог типов встреч</Title>
               <MeetingCatalog />
@@ -45,6 +53,7 @@ export default function App() {
               </Button>
             </>
           )}
+          <Anchor href="/owner/meeting-types">Владельцу</Anchor>
         </Stack>
       </Paper>
     </Container>

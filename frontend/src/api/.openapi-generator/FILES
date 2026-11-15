@@ -2,6 +2,9 @@ apis/HealthApi.ts
 apis/MeetingTypesApi.ts
 apis/index.ts
 index.ts
+models/ApiError.ts
+models/CreateMeetingType.ts
+models/FieldError.ts
 models/Health.ts
 models/MeetingType.ts
 models/index.ts
