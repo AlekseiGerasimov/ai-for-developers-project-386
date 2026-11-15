@@ -11,20 +11,30 @@ import {
 import MeetingCatalog from './MeetingCatalog'
 import MeetingCalendar from './MeetingCalendar'
 import OwnerMeetingTypes from './OwnerMeetingTypes'
+import OwnerMeetings from './OwnerMeetings'
 
 export default function App() {
   const isCatalog = window.location.pathname === '/meetings'
   const calendar = window.location.pathname.match(/^\/meetings\/([^/]+)$/)
   const isOwner = window.location.pathname === '/owner/meeting-types'
+  const isOwnerMeetings = window.location.pathname === '/owner/meetings'
 
   return (
     <Container component="main" size="sm" py={{ base: 'xl', sm: 80 }}>
       <Paper withBorder radius="lg" p={{ base: 'lg', sm: 'xl' }}>
         <Stack gap="xl">
-          {isOwner ? (
+          {isOwnerMeetings ? (
+            <>
+              <Title order={1}>Предстоящие встречи</Title>
+              <OwnerMeetings />
+              <Anchor href="/owner/meeting-types">Типы встреч</Anchor>
+              <Anchor href="/meetings">Каталог типов встреч</Anchor>
+            </>
+          ) : isOwner ? (
             <>
               <Title order={1}>Типы встреч владельца</Title>
               <OwnerMeetingTypes />
+              <Anchor href="/owner/meetings">Предстоящие встречи</Anchor>
               <Anchor href="/meetings">Каталог типов встреч</Anchor>
             </>
           ) : calendar ? (
