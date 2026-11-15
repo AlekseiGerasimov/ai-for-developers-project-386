@@ -35,6 +35,9 @@ run = "npm audit --audit-level=high"
 [tasks.test]
 run = "node scripts/tasks.mjs test"
 
+[tasks."test:e2e"]
+run = "node scripts/tasks.mjs test:e2e"
+
 [tasks.check]
 run = "node scripts/tasks.mjs check"
 

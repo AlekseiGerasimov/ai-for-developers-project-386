@@ -39,4 +39,5 @@ jobs:
           path: .cache/openapi-generator
           key: ${{ runner.os }}-openapi-${{ hashFiles('openapitools.json') }}
       - run: mise run install
+      - run: mise exec -- npx playwright install --with-deps chromium
       - run: mise run check

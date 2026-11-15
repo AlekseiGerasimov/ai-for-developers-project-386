@@ -6,3 +6,6 @@ dist/
 .cache/
 .mise.local.toml
 *.log
+data/
+test-results/
+playwright-report/

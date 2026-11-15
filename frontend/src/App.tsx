@@ -8,6 +8,7 @@ import {
   Text,
   Title,
 } from '@mantine/core'
+import MeetingCatalog from './MeetingCatalog'
 
 export default function App() {
   const isCatalog = window.location.pathname === '/meetings'
@@ -19,7 +20,7 @@ export default function App() {
           {isCatalog ? (
             <>
               <Title order={1}>Каталог типов встреч</Title>
-              <Text c="dimmed">Запись пока недоступна.</Text>
+              <MeetingCatalog />
               <Anchor href="/">На главную</Anchor>
             </>
           ) : (

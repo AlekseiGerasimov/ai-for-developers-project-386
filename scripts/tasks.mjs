@@ -87,6 +87,7 @@ function generate(check = false) {
     rmSync(sdk, { recursive: true, force: true })
     cpSync(path.join(output, 'sdk'), sdk, { recursive: true })
   }
+  maven('generate-sources')
 }
 
 function normalizeGenerated(dir) {
@@ -123,7 +124,7 @@ function tree(dir) {
 }
 
 function lintSources() {
-  bin('eslint', ['frontend', 'scripts'])
+  bin('eslint', ['frontend', 'scripts', 'e2e', 'playwright.config.ts'])
   bin('prettier', ['--check', '.'])
   run('actionlint', ['-shellcheck=', '-pyflakes='])
 }
@@ -154,6 +155,11 @@ switch (task) {
     run(win ? 'npm.cmd' : 'npm', ['run', 'build', '--workspace', 'frontend'])
     maven('clean', 'package', '-DskipTests')
     break
+  case 'test:e2e':
+    run(win ? 'npm.cmd' : 'npm', ['run', 'build', '--workspace', 'frontend'])
+    maven('-Pe2e', 'clean', 'package', '-DskipTests')
+    run(process.execPath, ['scripts/e2e.mjs'])
+    break
   case 'check':
     generate(true)
     lintSources()
@@ -164,6 +170,7 @@ switch (task) {
       force: true,
     })
     maven('-Pchecks', 'verify')
+    run(process.execPath, ['scripts/tasks.mjs', 'test:e2e'])
     break
   case 'backend':
     maven('spring-boot:run')

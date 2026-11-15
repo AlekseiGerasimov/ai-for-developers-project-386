@@ -16,3 +16,15 @@ model Health {
 @tag("Health")
 @get
 op getHealth(): Health;
+
+model MeetingType {
+  @format("uuid") id: string;
+  @minLength(1) @maxLength(100) title: string;
+  @minLength(1) @maxLength(2000) description: string;
+  @minValue(1) @maxValue(480) durationMinutes: int32;
+}
+
+@route("/api/meeting-types")
+@tag("MeetingTypes")
+@get
+op listMeetingTypes(): MeetingType[];

@@ -78,15 +78,19 @@ mise run dev
 
 Откройте http://localhost:5173: главная страница «Запись на звонок» объясняет
 сценарий записи без регистрации. Ссылка «Выбрать встречу» ведёт на `/meetings` —
-заглушку каталога типов встреч со ссылкой на главную. Бронирование пока недоступно.
-Главная и каталог открываются без обращения к API.
+каталог типов встреч с названием, описанием и длительностью из API.
+Новый каталог пуст («Пока нет типов встреч»); демонстрационные данные не создаются.
+Создание типов и бронирование будут добавлены следующими тикетами.
 
 Бекенд отвечает на http://localhost:8080/api/health. Vite проксирует `/api`
-на бекенд. Бронирование и база данных пока не реализованы.
+на бекенд. `GET /api/meeting-types` возвращает каталог из файловой H2.
+Flyway создаёт схему при первом запуске. По умолчанию данные сохраняются
+в `./data/calendar` относительно рабочей папки сервера. Путь можно задать
+переменной `CALENDAR_DATABASE_PATH` или `--spring.datasource.url=jdbc:h2:file:/path/calendar;LOCK_TIMEOUT=5000`.
+На один файл БД допускается одна работающая копия приложения.
 
 Термины проекта записаны в [GLOSSARY.md](GLOSSARY.md), принятые решения —
-в [docs/adr/](docs/adr/). Рабочие часы, часовой пояс, шаг слотов, начало окна
-записи и состав формы остаются вопросами следующего этапа.
+в [docs/adr/](docs/adr/). Правила записи определены в спецификации #10.
 
 Серверы работают в фоне под управлением mise/pitchfork:
 
@@ -104,7 +108,7 @@ java -jar backend/target/calendar-0.1.0.jar
 ```
 
 Откройте http://localhost:8080/. Один Spring Boot сервер отдаёт главную,
-каталог на `/meetings` и API на `/api/health`. Прямое открытие и обновление
+каталог на `/meetings` и API на `/api/health` и `/api/meeting-types`. Прямое открытие и обновление
 `/meetings` поддерживаются. Vite и Node.js для запуска готового JAR не нужны;
 для команды `java` используйте Java из окружения mise (`mise exec -- java ...`),
 если она не доступна напрямую в PATH.
@@ -122,22 +126,38 @@ java -jar backend/target/calendar-0.1.0.jar
 
 Команды из корня репозитория (Windows и Linux):
 
-| Команда                       | Назначение                                                    |
-| ----------------------------- | ------------------------------------------------------------- |
-| `mise run install`            | Установка npm-зависимостей из lockfile без Git-хуков (для CI) |
-| `mise run check`              | Генерация, линтеры, типы, сборка, frontend-тесты и JUnit      |
-| `mise run lint`               | Checkstyle, ESLint, Prettier и actionlint                     |
-| `mise run lint:commit`        | Те же линтеры с Maven offline после начальной установки       |
-| `mise run audit`              | Сетевой аудит npm, ошибка при high/critical                   |
-| `mise run test`               | Vitest: страницы и ссылки; JUnit: сервер и `/api/health`      |
-| `mise run build`              | Сборка фронтенда и исполняемого JAR                           |
-| `mise run generate`           | Обновление OpenAPI и клиентского SDK из TypeSpec              |
-| `mise exec -- npm run format` | Форматирование исходников и конфигураций                      |
+| Команда                       | Назначение                                                                   |
+| ----------------------------- | ---------------------------------------------------------------------------- |
+| `mise run install`            | Установка npm-зависимостей из lockfile без Git-хуков (для CI)                |
+| `mise run check`              | Актуальность генерации, линтеры, типы, сборка, Vitest, HTTP/JUnit и Chromium |
+| `mise run lint`               | Checkstyle, ESLint, Prettier и actionlint                                    |
+| `mise run lint:commit`        | Те же линтеры с Maven offline после начальной установки                      |
+| `mise run audit`              | Сетевой аудит npm, ошибка при high/critical                                  |
+| `mise run test`               | Vitest: состояния каталога; HTTP/JUnit: сервер, H2 и JSON                    |
+| `mise run test:e2e`           | Сборка отдельного JAR и каталог в Chromium на desktop/mobile                 |
+| `mise run build`              | Сборка фронтенда и исполняемого JAR                                          |
+| `mise run generate`           | OpenAPI, клиентский SDK и Java-интерфейсы из TypeSpec                        |
+| `mise exec -- npm run format` | Форматирование исходников и конфигураций                                     |
 
 Контракт находится в `contracts/main.tsp`, сервер — в `backend/`,
 интерфейс — в `frontend/`. После изменения TypeSpec выполните генерацию
 и включите обновлённые `contracts/openapi.yaml` и `frontend/src/api/` в коммит.
-Java-интерфейсы генерируются при Maven-сборке в `backend/target/`.
+Java-интерфейсы генерируются в `backend/target/` и не коммитятся.
+
+Перед первым браузерным прогоном установите Chromium:
+
+```bash
+mise exec -- npx playwright install chromium
+mise run test:e2e
+```
+
+В Linux CI используется `playwright install --with-deps chromium`.
+Браузерный прогон собирает собственный `backend/target/e2e/calendar-0.1.0.jar`,
+создаёт временную файловую H2 с тестовым каталогом и запускает Java на свободном
+порту (`server.port=0`). После успеха или ошибки созданный процесс останавливается,
+БД удаляется. Пользовательский сервер и его JAR/БД не затрагиваются.
+HTTP/JUnit также использует изолированные H2; заполнение каталога — только
+тестовая подготовка. Данные проверяются через HTTP, а не чтением таблиц.
 
 GitHub Actions запускает `mise run check` на каждый push и pull request.
 `mise run setup` предварительно загружает зависимости линтера и устанавливает Git-хуки.

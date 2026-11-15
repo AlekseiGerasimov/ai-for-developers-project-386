@@ -26,6 +26,7 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@openapitools/openapi-generator-cli": "2.42.0",
+    "@playwright/test": "1.65.1",
     "@typespec/compiler": "1.17.0",
     "@typespec/http": "1.17.0",
     "@typespec/openapi": "1.17.0",
