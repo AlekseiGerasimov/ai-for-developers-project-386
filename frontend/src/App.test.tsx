@@ -61,6 +61,48 @@ test('владелец создаёт тип через сеть и получа
   )
 })
 
+test('owner can create a type at Unicode character limits but cannot exceed them', async () => {
+  const title = '𐐀'.repeat(100)
+  const description = '𐐀'.repeat(2000)
+  const created = {
+    id: 'd29fe6b4-a141-4ba0-9d98-b738cfe0ec7c',
+    title,
+    description,
+    durationMinutes: 30,
+  }
+  const network = vi
+    .fn()
+    .mockResolvedValueOnce(Response.json([]))
+    .mockResolvedValueOnce(Response.json(created, { status: 201 }))
+    .mockResolvedValueOnce(Response.json([created]))
+  vi.stubGlobal('fetch', network)
+  window.history.replaceState(null, '', '/owner/meeting-types')
+  render(
+    <MantineProvider>
+      <App />
+    </MantineProvider>,
+  )
+  await screen.findByText('Пока нет типов встреч')
+  fireEvent.change(screen.getByLabelText('Название'), {
+    target: { value: title + '𐐀' },
+  })
+  fireEvent.change(screen.getByLabelText('Описание'), {
+    target: { value: description + '𐐀' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Создать тип встречи' }))
+  expect(screen.getByText('Введите от 1 до 100 символов')).toBeVisible()
+  expect(screen.getByText('Введите от 1 до 2000 символов')).toBeVisible()
+  fireEvent.change(screen.getByLabelText('Название'), {
+    target: { value: ` ${title} ` },
+  })
+  fireEvent.change(screen.getByLabelText('Описание'), {
+    target: { value: ` ${description} ` },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Создать тип встречи' }))
+  expect(await screen.findByText('Тип встречи создан')).toBeVisible()
+  expect(await screen.findByRole('heading', { name: title })).toBeVisible()
+})
+
 test('каталог показывает загрузку и пустое состояние', async () => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([])))
   window.history.replaceState(null, '', '/meetings')

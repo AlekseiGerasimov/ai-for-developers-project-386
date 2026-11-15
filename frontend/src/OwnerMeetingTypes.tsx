@@ -25,9 +25,9 @@ export default function OwnerMeetingTypes() {
   async function submit() {
     if (sending.current) return
     const fields: Record<string, string> = {}
-    if (!title.trim() || title.trim().length > 100)
+    if (!title.trim() || [...title.trim()].length > 100)
       fields.title = 'Введите от 1 до 100 символов'
-    if (!description.trim() || description.trim().length > 2000)
+    if (!description.trim() || [...description.trim()].length > 2000)
       fields.description = 'Введите от 1 до 2000 символов'
     if (
       !/^\d+$/.test(duration) ||

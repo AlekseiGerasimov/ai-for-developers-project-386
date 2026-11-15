@@ -4,8 +4,8 @@ test('two guests with a stale selection recover from conflict without losing fie
   page,
   browser,
 }, testInfo) => {
-  const title = 'Я'.repeat(100)
-  const guestName = 'И'.repeat(100)
+  const title = '𐐀'.repeat(100)
+  const guestName = '𐐀'.repeat(100)
   const guestEmail = `${'g'.repeat(64)}@${'e'.repeat(63)}.example.com`
   const expectNoHorizontalOverflow = async () => {
     expect(

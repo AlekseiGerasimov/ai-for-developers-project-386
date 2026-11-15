@@ -67,7 +67,7 @@ export function useBooking(id: string, refresh: () => void) {
   async function submit(slot: Slot) {
     if (sending.current || session.state !== 'draft') return
     const fields: Record<string, string> = {}
-    if (!session.name.trim() || session.name.trim().length > 100)
+    if (!session.name.trim() || [...session.name.trim()].length > 100)
       fields.guestName = 'Введите от 1 до 100 символов'
     if (
       !session.email.trim() ||

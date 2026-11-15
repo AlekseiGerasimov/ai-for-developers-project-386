@@ -286,6 +286,42 @@ test('field errors stay near inputs and draft reload preserves fields without se
   expect(screen.getByLabelText('Email')).toHaveValue('Guest@example.com')
 })
 
+test('guest can book with 100 Unicode characters in their name but not 101', async () => {
+  const name = '𐐀'.repeat(100)
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        expect(JSON.parse(String(init.body)).guestName).toBe(` ${name} `)
+        return Response.json(
+          {
+            id: 'saved',
+            meetingType: type,
+            ...availability.slots[0],
+            guestName: name,
+            guestEmail: 'Guest@example.com',
+          },
+          { status: 201 },
+        )
+      }
+      return Response.json(url.endsWith('/slots') ? availability : type)
+    }),
+  )
+  openCalendar()
+  await fillBooking()
+  fireEvent.change(screen.getByLabelText('Имя'), {
+    target: { value: name + '𐐀' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Подтвердить запись' }))
+  expect(screen.getByText('Введите от 1 до 100 символов')).toBeVisible()
+  fireEvent.change(screen.getByLabelText('Имя'), {
+    target: { value: ` ${name} ` },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Подтвердить запись' }))
+  expect(await screen.findByText('Встреча подтверждена')).toBeVisible()
+  expect(screen.getByText(name)).toBeVisible()
+})
+
 test('unexpected successful HTTP status does not claim confirmation', async () => {
   vi.stubGlobal(
     'fetch',

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.jdbc.Sql;
@@ -181,9 +182,38 @@ class BookingTests {
     }
 
     @Test
+    void nonCanonicalUuidIsRejectedWithoutSaving() throws Exception {
+        for (var id : java.util.List.of("0-0-0-0-1", "00000000000000000000000000000001",
+                "AAAAAAAAAAAAAAAAAAAAAQ==")) {
+            var response = post(id, "2026-11-16T07:00:00Z");
+            assertEquals(400, response.statusCode(), id);
+            assertEquals("VALIDATION_ERROR", mapper.readTree(response.body()).get("code").asString());
+        }
+        assertEquals("[]", get().body());
+    }
+
+    @Test
+    void wrongJsonTypesAreRejectedWithoutSaving() throws Exception {
+        for (var field : java.util.List.of("startsAt", "guestName", "guestEmail")) {
+            for (var value : java.util.List.of(1794812400, 1794812400.0, true)) {
+                var input = new java.util.HashMap<String, Object>();
+                input.put("meetingTypeId", "00000000-0000-0000-0000-000000000001");
+                input.put("startsAt", "2026-11-16T07:00:00Z");
+                input.put("guestName", "Guest");
+                input.put("guestEmail", "Guest@example.com");
+                input.put(field, value);
+                var response = postJson(mapper.writeValueAsString(input));
+                assertEquals(400, response.statusCode(), field + "=" + value);
+                assertEquals("VALIDATION_ERROR", mapper.readTree(response.body()).get("code").asString());
+            }
+        }
+        assertEquals("[]", get().body());
+    }
+
+    @Test
     void invalidGuestFieldsAreRejectedWithoutSaving() throws Exception {
         for (var field : java.util.List.of("guestName", "guestEmail")) {
-            for (var value : java.util.List.of("", "   ", "x".repeat(255))) {
+            for (var value : java.util.List.of("", "   ", "x".repeat(255), "𐐀".repeat(101))) {
                 var input = new java.util.HashMap<String, String>();
                 input.put("meetingTypeId", "00000000-0000-0000-0000-000000000001");
                 input.put("startsAt", "2026-11-16T07:00:00Z");
@@ -204,9 +234,10 @@ class BookingTests {
         assertEquals("[]", get().body());
     }
 
-    @Test
-    void trimmedMaximumGuestFieldsAndRepeatedEmailAreAllowed() throws Exception {
-        var name = "Я".repeat(100);
+    @ParameterizedTest
+    @ValueSource(strings = {"Я", "𐐀"})
+    void trimmedMaximumGuestFieldsAndRepeatedEmailAreAllowed(String letter) throws Exception {
+        var name = letter.repeat(100);
         var email = "A".repeat(64) + "@" + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(57) + ".com";
         assertEquals(254, email.length());
         for (var start : java.util.List.of("2026-11-16T07:00:00Z", "2026-11-16T08:00:00Z")) {

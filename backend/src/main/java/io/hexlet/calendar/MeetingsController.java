@@ -61,7 +61,7 @@ public class MeetingsController implements MeetingsApi {
             var name = input.getGuestName() == null ? "" : input.getGuestName().strip();
             var email = input.getGuestEmail() == null ? "" : input.getGuestEmail().strip();
             var errors = new ArrayList<FieldError>();
-            if (name.isEmpty() || name.length() > 100) {
+            if (name.isEmpty() || name.codePointCount(0, name.length()) > 100) {
                 errors.add(new FieldError().field("guestName").message("Введите от 1 до 100 символов"));
             }
             if (email.isEmpty() || email.length() > 254

@@ -24,10 +24,10 @@ public class MeetingTypesController implements MeetingTypesApi {
         var title = input.getTitle() == null ? "" : input.getTitle().strip();
         var description = input.getDescription() == null ? "" : input.getDescription().strip();
         var errors = new ArrayList<FieldError>();
-        if (title.isEmpty() || title.length() > 100) {
+        if (title.isEmpty() || title.codePointCount(0, title.length()) > 100) {
             errors.add(new FieldError().field("title").message("Введите от 1 до 100 символов"));
         }
-        if (description.isEmpty() || description.length() > 2000) {
+        if (description.isEmpty() || description.codePointCount(0, description.length()) > 2000) {
             errors.add(new FieldError().field("description").message("Введите от 1 до 2000 символов"));
         }
         if (!errors.isEmpty()) {

@@ -25,8 +25,8 @@ test('owner creates a type, guest books and reloads confirmation, owner sees the
   const slot = page.getByRole('button', { name: '12:00–12:20' })
   await slot.focus()
   await page.keyboard.press('Enter')
-  await page.getByLabel('Имя', { exact: true }).fill(name)
-  await page.getByLabel('Email', { exact: true }).fill(email)
+  await page.getByLabel('Имя', { exact: true }).pressSequentially(name)
+  await page.getByLabel('Email', { exact: true }).pressSequentially(email)
   const posts: string[] = []
   page.on('request', (request) => {
     if (

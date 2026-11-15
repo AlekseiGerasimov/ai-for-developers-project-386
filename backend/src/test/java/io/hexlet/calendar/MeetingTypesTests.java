@@ -5,6 +5,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,8 +31,14 @@ class MeetingTypesTests {
                 "{\"title\":null,\"description\":\"x\",\"durationMinutes\":20}",
                 "{\"title\":\"x\",\"description\":\"x\",\"durationMinutes\":481}",
                 "{\"title\":\"x\",\"description\":\"x\",\"durationMinutes\":\"20\"}",
+                "{\"title\":123,\"description\":\"x\",\"durationMinutes\":20}",
+                "{\"title\":false,\"description\":\"x\",\"durationMinutes\":20}",
+                "{\"title\":\"x\",\"description\":123.5,\"durationMinutes\":20}",
+                "{\"title\":\"x\",\"description\":true,\"durationMinutes\":20}",
                 "{\"title\":\"" + "a".repeat(101) + "\",\"description\":\"x\",\"durationMinutes\":20}",
-                "{\"title\":\"x\",\"description\":\"" + "a".repeat(2001) + "\",\"durationMinutes\":20}"
+                "{\"title\":\"x\",\"description\":\"" + "a".repeat(2001) + "\",\"durationMinutes\":20}",
+                "{\"title\":\"" + "𐐀".repeat(101) + "\",\"description\":\"x\",\"durationMinutes\":20}",
+                "{\"title\":\"x\",\"description\":\"" + "𐐀".repeat(2001) + "\",\"durationMinutes\":20}"
             }) {
                 var response = client.send(HttpRequest.newBuilder()
                         .uri(URI.create("http://localhost:" + port + "/api/meeting-types"))
@@ -44,20 +52,21 @@ class MeetingTypesTests {
         }
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"a", "𐐀"})
     @Sql(statements = "DELETE FROM meeting_types", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
-    void trimmedMaximumLengthsAndDuplicateTitlesAreAllowed() throws Exception {
+    void trimmedMaximumLengthsAndDuplicateTitlesAreAllowed(String letter) throws Exception {
         try (var client = HttpClient.newHttpClient()) {
             for (var duration : new int[] {1, 480}) {
-                var body = "{\"title\":\" " + "a".repeat(100) + " \",\"description\":\" "
-                        + "d".repeat(2000) + " \",\"durationMinutes\":" + duration + "}";
+                var body = "{\"title\":\" " + letter.repeat(100) + " \",\"description\":\" "
+                        + letter.repeat(2000) + " \",\"durationMinutes\":" + duration + "}";
                 var response = client.send(HttpRequest.newBuilder()
                         .uri(URI.create("http://localhost:" + port + "/api/meeting-types"))
                         .header("Content-Type", "application/json")
                         .POST(HttpRequest.BodyPublishers.ofString(body)).build(), HttpResponse.BodyHandlers.ofString());
                 assertEquals(201, response.statusCode());
-                assertEquals("a".repeat(100), mapper.readTree(response.body()).get("title").asText());
-                assertEquals("d".repeat(2000), mapper.readTree(response.body()).get("description").asText());
+                assertEquals(letter.repeat(100), mapper.readTree(response.body()).get("title").asText());
+                assertEquals(letter.repeat(2000), mapper.readTree(response.body()).get("description").asText());
             }
             var catalog = client.send(HttpRequest.newBuilder()
                     .uri(URI.create("http://localhost:" + port + "/api/meeting-types"))

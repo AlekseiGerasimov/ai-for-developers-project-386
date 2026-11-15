@@ -144,9 +144,11 @@ class CalendarTests {
             var missing = get("00000000-0000-0000-0000-000000000099" + suffix);
             assertEquals(404, missing.statusCode());
             assertEquals("MEETING_TYPE_NOT_FOUND", mapper.readTree(missing.body()).get("code").asString());
-            var invalid = get("invalid" + suffix);
-            assertEquals(400, invalid.statusCode());
-            assertEquals("VALIDATION_ERROR", mapper.readTree(invalid.body()).get("code").asString());
+            for (var id : new String[] {"invalid", "0-0-0-0-1", "00000000000000000000000000000001"}) {
+                var invalid = get(id + suffix);
+                assertEquals(400, invalid.statusCode(), id + suffix);
+                assertEquals("VALIDATION_ERROR", mapper.readTree(invalid.body()).get("code").asString());
+            }
         }
     }
 

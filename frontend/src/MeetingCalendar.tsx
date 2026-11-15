@@ -7,7 +7,7 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   CalendarApi,
   Configuration,
@@ -20,21 +20,18 @@ import { useBooking } from './useBooking'
 
 const api = new CalendarApi(new Configuration({ basePath: '' }))
 const zone = 'Europe/Moscow'
-const dayKey = (date: Date) =>
-  new Intl.DateTimeFormat('sv-SE', { timeZone: zone }).format(date)
-const dayLabel = (date: Date) =>
-  new Intl.DateTimeFormat('ru-RU', {
-    timeZone: 'UTC',
-    weekday: 'short',
-    day: 'numeric',
-    month: 'long',
-  }).format(date)
-const time = (date: Date) =>
-  new Intl.DateTimeFormat('ru-RU', {
-    timeZone: zone,
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
+const dayKey = new Intl.DateTimeFormat('sv-SE', { timeZone: zone }).format
+const dayLabel = new Intl.DateTimeFormat('ru-RU', {
+  timeZone: 'UTC',
+  weekday: 'short',
+  day: 'numeric',
+  month: 'long',
+}).format
+const time = new Intl.DateTimeFormat('ru-RU', {
+  timeZone: zone,
+  hour: '2-digit',
+  minute: '2-digit',
+}).format
 const interval = (slot: Slot) => `${time(slot.startsAt)}–${time(slot.endsAt)}`
 
 export default function MeetingCalendar({ id }: { id: string }) {
@@ -48,6 +45,16 @@ export default function MeetingCalendar({ id }: { id: string }) {
   const [attempt, setAttempt] = useState(0)
   const [day, setDay] = useState('')
   const [selected, setSelected] = useState<Slot>()
+  const slotsByDay = useMemo(() => {
+    const grouped = new Map<string, Slot[]>()
+    for (const slot of data?.availability.slots ?? []) {
+      const key = dayKey(slot.startsAt)
+      const slots = grouped.get(key) ?? []
+      slots.push(slot)
+      grouped.set(key, slots)
+    }
+    return grouped
+  }, [data])
   const booking = useBooking(id, () => {
     setSelected(undefined)
     setLoading(true)
@@ -149,9 +156,7 @@ export default function MeetingCalendar({ id }: { id: string }) {
     date.setUTCDate(date.getUTCDate() + index)
     return date
   })
-  const slots = data.availability.slots.filter(
-    (slot) => dayKey(slot.startsAt) === day,
-  )
+  const slots = slotsByDay.get(day) ?? []
   return (
     <Stack style={{ overflowWrap: 'anywhere' }}>
       <Title order={1}>{data.type.title}</Title>
@@ -172,12 +177,7 @@ export default function MeetingCalendar({ id }: { id: string }) {
               key={key}
               variant={key === day ? 'filled' : 'light'}
               aria-pressed={key === day}
-              disabled={
-                booking.pending ||
-                !data.availability.slots.some(
-                  (slot) => dayKey(slot.startsAt) === key,
-                )
-              }
+              disabled={booking.pending || !slotsByDay.has(key)}
               onClick={() => {
                 setDay(key)
                 setSelected(undefined)
