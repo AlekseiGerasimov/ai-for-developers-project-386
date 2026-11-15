@@ -11,6 +11,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
 import org.springframework.context.annotation.Import;
 import org.springframework.beans.factory.annotation.Autowired;
 import tools.jackson.databind.ObjectMapper;
@@ -20,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
         properties = "spring.datasource.url=jdbc:h2:mem:bookings;DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=5000")
 @Import(CalendarTests.TimeConfiguration.class)
 @Sql("/catalog-fixture.sql")
+@SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
 @Sql(statements = {"DELETE FROM meetings", "DELETE FROM meeting_types"},
         executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 class BookingTests {
