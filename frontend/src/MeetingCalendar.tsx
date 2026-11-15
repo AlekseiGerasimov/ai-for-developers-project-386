@@ -91,7 +91,7 @@ export default function MeetingCalendar({ id }: { id: string }) {
   if (booking.state === 'success' && booking.meeting) {
     const meeting = booking.meeting
     return (
-      <Stack>
+      <Stack style={{ overflowWrap: 'anywhere' }}>
         <Title order={1}>Встреча подтверждена</Title>
         <Text>
           {meeting.meetingType.title}, {meeting.meetingType.durationMinutes} мин
@@ -153,7 +153,7 @@ export default function MeetingCalendar({ id }: { id: string }) {
     (slot) => dayKey(slot.startsAt) === day,
   )
   return (
-    <Stack>
+    <Stack style={{ overflowWrap: 'anywhere' }}>
       <Title order={1}>{data.type.title}</Title>
       <Text style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
         {data.type.description}

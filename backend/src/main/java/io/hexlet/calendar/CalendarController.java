@@ -5,8 +5,6 @@ import io.hexlet.calendar.model.Availability;
 import io.hexlet.calendar.model.MeetingType;
 import io.hexlet.calendar.model.Slot;
 import java.time.Clock;
-import java.time.DayOfWeek;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -44,33 +42,26 @@ public class CalendarController implements CalendarApi {
         var type = getMeetingType(id).getBody();
         var now = clock.instant();
         var zone = BookingPolicy.ZONE;
-        var today = LocalDate.ofInstant(now, zone);
+        var windowStart = BookingPolicy.windowStart(now);
+        var windowEnd = BookingPolicy.windowEnd(now);
         var slots = new ArrayList<Slot>();
         var occupied = jdbc.query("SELECT starts_at, ends_at FROM meetings WHERE starts_at < ? AND ends_at > ?",
                 (row, index) -> new Slot().startsAt(row.getObject("starts_at", OffsetDateTime.class))
                         .endsAt(row.getObject("ends_at", OffsetDateTime.class)),
-                today.plusDays(14).atStartOfDay(zone).toOffsetDateTime(),
-                today.atStartOfDay(zone).toOffsetDateTime());
-        for (var day = today; !day.isAfter(today.plusDays(13)); day = day.plusDays(1)) {
-            if (day.getDayOfWeek() == DayOfWeek.SATURDAY || day.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                continue;
-            }
-            var closing = day.atTime(18, 0).atZone(zone).toInstant();
-            for (var start = day.atTime(9, 0).atZone(zone).toInstant();
-                    start.isBefore(closing); start = start.plusSeconds(900)) {
-                var end = start.plusSeconds(type.getDurationMinutes() * 60L);
-                var candidate = start;
-                var overlaps = occupied.stream().anyMatch(meeting ->
-                        meeting.getStartsAt().toInstant().isBefore(end)
-                                && meeting.getEndsAt().toInstant().isAfter(candidate));
-                if (BookingPolicy.valid(start, end, now) && !overlaps) {
-                    slots.add(new Slot().startsAt(start.atOffset(ZoneOffset.UTC))
-                            .endsAt(end.atOffset(ZoneOffset.UTC)));
-                }
+                windowEnd.plusDays(1).atStartOfDay(zone).toOffsetDateTime(),
+                windowStart.atStartOfDay(zone).toOffsetDateTime());
+        for (var start : BookingPolicy.candidateStarts(now)) {
+            var end = start.plusSeconds(type.getDurationMinutes() * 60L);
+            var overlaps = occupied.stream().anyMatch(meeting ->
+                    meeting.getStartsAt().toInstant().isBefore(end)
+                            && meeting.getEndsAt().toInstant().isAfter(start));
+            if (BookingPolicy.valid(start, end, now) && !overlaps) {
+                slots.add(new Slot().startsAt(start.atOffset(ZoneOffset.UTC))
+                        .endsAt(end.atOffset(ZoneOffset.UTC)));
             }
         }
         return ResponseEntity.ok(new Availability().timeZone(zone.getId())
                 .serverTime(OffsetDateTime.ofInstant(now, ZoneOffset.UTC))
-                .windowStartDate(today).windowEndDate(today.plusDays(13)).slots(slots));
+                .windowStartDate(windowStart).windowEndDate(windowEnd).slots(slots));
     }
 }
